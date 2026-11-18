@@ -1,0 +1,141 @@
+.hero--heart {
+  background: var(--paper);
+  color: var(--blue);
+  isolation: isolate;
+}
+.hero--heart::after {
+  display: none;
+}
+.heart-stage {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  touch-action: pan-y;
+}
+.heart-stage:not([data-heart-ready]) canvas {
+  visibility: hidden;
+}
+.heart-stage[data-heart-ready] .heart-fallback {
+  display: none;
+}
+.heart-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(ellipse at 50% 75%, #d7ad9160, transparent 30%),
+    radial-gradient(ellipse at 53% 49%, #fff8e9, var(--paper) 75%);
+}
+.heart-silhouette {
+  position: relative;
+  width: clamp(104px, 18vw, 230px);
+  aspect-ratio: 1;
+  margin-top: 14vh;
+  transform: rotate(-43deg);
+  border-radius: 18% 0 24% 12%;
+  background: #e8551f;
+  box-shadow: -16px 24px 30px #9c452f25;
+  cursor: pointer;
+}
+.heart-silhouette::before, .heart-silhouette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+}
+.heart-silhouette::before { transform: translateY(-46%); }
+.heart-silhouette::after { transform: translateX(46%); }
+.heart-fallback::after {
+  content: "";
+  display: none;
+  position: absolute;
+  width: 16px;
+  height: 22px;
+  left: 56%;
+  top: 55%;
+  background: var(--blue);
+  border-radius: 70% 50% 75% 65%;
+  pointer-events: none;
+}
+.heart-fallback--tear .heart-fallback::after {
+  display: block;
+  animation: heart-fallback-drop 1.2s ease-in forwards;
+}
+@keyframes heart-fallback-drop {
+  0% { transform: translateY(-16px) scale(.4); opacity: 0; }
+  25% { opacity: 1; }
+  75% { transform: translateY(120px) scale(1); opacity: 1; }
+  100% { transform: translateY(126px) scale(2, .3); opacity: 0; }
+}
+.heart-instructions { display: none; }
+.hero--heart .heart-instructions:not([hidden]) {
+  display: grid;
+  justify-items: end;
+  gap: .55rem;
+  text-align: right;
+}
+.heart-instructions .mono { margin: 0; }
+.hero--heart:not(:has(.heart-stage[data-heart-ready])) .heart-instructions .mono {
+  visibility: hidden;
+}
+.heart-touch {
+  color: var(--blue);
+  background: var(--paper);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  min-height: 44px;
+  padding: .5rem .95rem;
+  font: inherit;
+  cursor: pointer;
+}
+.heart-touch:hover, .heart-touch:focus-visible {
+  background: var(--blue);
+  color: var(--paper);
+}
+.heart-touch span { margin-inline-start: .35rem; }
+.hero--heart .hero-topline, .hero--heart h1, .hero--heart .hero-scribble {
+  pointer-events: none;
+}
+.hero--heart h1 {
+  top: 19%;
+  font-size: clamp(2.4rem, 4.55vw, 5.9rem);
+}
+@media (min-width: 701px) and (min-aspect-ratio: 23/20) {
+  .hero--heart h1 {
+    max-width: 43%;
+    font-size: clamp(2.35rem, 4.05vw, 5.5rem);
+  }
+  .hero--heart h1 .second-line { margin-left: 0; }
+}
+.hero--heart .hero-scribble {
+  top: auto;
+  bottom: 24%;
+  right: 7%;
+}
+.hero--heart .slide-dot {
+  color: var(--blue);
+  border-color: #3154e850;
+  background: var(--paper);
+}
+.hero--heart .slide-dot.active, .hero--heart .slide-dot:hover {
+  color: var(--paper);
+  border-color: var(--blue);
+  background: var(--blue);
+}
+.heart-tab-symbol { font: 28px/1 Arial, sans-serif; }
+.hero:not(.hero--heart) .slide-dot[data-slide="heart"] { color: inherit; }
+@media (max-width: 600px) {
+  .hero--heart h1 { top: 20%; font-size: clamp(2rem, 7.6vw, 3.15rem); }
+  .hero--heart h1 .second-line { margin-left: 0; }
+  .hero--heart .hero-scribble { bottom: 27%; right: 7%; font-size: 1.6rem; }
+  .hero--heart .heart-instructions .mono { font-size: .62rem; }
+  .hero--heart .heart-touch { min-height: 36px; font-size: .82rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heart-fallback--tear .heart-fallback::after {
+    animation: none;
+    transform: translateY(72px);
+  }
+}

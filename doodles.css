@@ -1,0 +1,39 @@
+/* A small family of hand-drawn moving-image companions. */
+.doodle{width:32px;height:32px;display:inline-block;vertical-align:middle;flex-shrink:0;overflow:visible;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.doodle-eye{fill:currentColor;stroke:none}
+.doodle-cheek{stroke:var(--orange);stroke-width:3;opacity:.8}
+.doodle-eyes{transform-box:fill-box;transform-origin:center;animation:doodle-blink 6.5s ease-in-out infinite}
+.doodle--ghost .doodle-eyes{animation-delay:1.7s}
+.doodle--planet .doodle-eyes{animation-delay:3.1s}
+.clap-lid{transform-origin:10px 23px;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+a:hover .doodle,button:hover .doodle{transform:rotate(-10deg) translateY(-2px)}
+a:hover .clap-lid,button:hover .clap-lid,.section-note:hover .clap-lid{transform:rotate(-12deg)}
+.brand-mark b{display:inline-block;vertical-align:top;margin-top:2px}
+.brand-mark b .doodle{width:27px;height:27px;stroke-width:2.6}
+.slide-dot{display:grid;place-items:center;padding:7px}
+.slide-dot .doodle{width:25px;height:25px;stroke-width:2.6}
+.slide-dot.active .doodle{transform:rotate(-7deg)}
+.hero-scribble .dream-buddy{position:absolute;width:63px;height:63px;left:-48px;top:-33px;transform:rotate(-12deg);animation:doodle-drift 6s ease-in-out infinite}
+.intro .star{display:flex;justify-content:center}
+.intro-mascot{width:72px;height:72px;transform:rotate(9deg)}
+.intro .star:hover .intro-mascot{transform:rotate(-11deg) scale(1.1)}
+.section-note>.doodle{display:block;width:64px;height:64px;margin:0 auto 15px;transform:rotate(-10deg)}
+.section-note .arrow{font-size:42px;margin-top:10px}
+.about-doodle span .doodle{width:95px;height:95px;transform:rotate(12deg)}
+.menu-category{display:flex;align-items:center;gap:22px;max-width:90%}
+.index-list .menu-category .doodle{width:48px;height:48px}
+.index-list .menu-category>span{max-width:none}
+.category-scribble{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.category-scribble>.doodle{width:55px;height:55px;transform:rotate(9deg)}
+.category-scribble:hover>.doodle{transform:rotate(-8deg) translateY(-4px)}
+.next-category>.mono{display:flex;gap:14px;align-items:center}
+.next-category .mono .doodle{width:26px;height:26px}
+@keyframes doodle-blink{0%,90%,96%,100%{transform:scaleY(1)}93%{transform:scaleY(.12)}}
+@keyframes doodle-drift{0%,100%{transform:translateY(0) rotate(-12deg)}50%{transform:translateY(-8px) rotate(-3deg)}}
+@media(max-width:900px){.category-links{gap:20px}.category-link{font-size:14px}}
+@media(max-width:600px){.brand-mark b .doodle{width:23px;height:23px}.brand-mark b{margin-top:0}.slide-dot{padding:5px}.slide-dot .doodle{width:21px;height:21px}.hero-scribble .dream-buddy{width:48px;height:48px;left:-34px;top:-36px}.intro-mascot{width:58px;height:58px}.section-note>.doodle{width:47px;height:47px;margin-bottom:10px}.section-note .arrow{font-size:32px}.about-doodle span .doodle{width:48px;height:48px}.category-scribble{gap:8px}.category-scribble>.doodle{width:37px;height:37px}.index-list .menu-category .doodle{width:30px;height:30px}.menu-category{gap:12px}.category-links{gap:15px}.category-link{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.doodle-eyes,.hero-scribble .dream-buddy{animation:none}.doodle,.clap-lid{transition:none}}
+
+/* Restore the original static asterisk ornament. */
+.hero-scribble .dream-symbol{position:absolute;left:-38px;top:-24px;font-family:var(--hand);font-size:46px;line-height:1;animation:none;transition:none}
+@media(max-width:600px){.hero-scribble .dream-symbol{left:-29px;top:-20px;font-size:35px}}

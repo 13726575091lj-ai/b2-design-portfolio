@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://13726575091lj-ai.github.io/b2-design-portfolio/sitemap.xml
