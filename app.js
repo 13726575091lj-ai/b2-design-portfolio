@@ -38,7 +38,23 @@ function menu(){return `<section class="index-panel" id="index-panel" aria-label
 function tabs(isHome=false){return `<div class="work-tabs"><span class="tabs-label">${t('按世界探索','EXPLORE BY WORLD')}</span><nav class="category-links" aria-label="作品分类">${isHome?`<span class="category-link current">${t('精选','Selected')}</span>`:''}${Object.entries(categories).map(([id,c])=>`<a class="category-link ${current===id?'current':''}" href="${id}.html" ${current===id?'aria-current="page"':''}>${c.name}</a>`).join('')}</nav></div>`}
 function card(p,loading='lazy'){let letter=0;const title=p.title.split(' ').map(word=>`<span class="title-word">${[...word].map(char=>`<i class="title-letter" style="--letter:${letter++}">${char}</i>`).join('')}</span>`).join(' ');return `<article class="work-card"><h3 class="sr-only">${p.title}</h3><div class="holo-stage"><button class="image-button holo-card" data-preset="bursts" data-project="${p.id}" aria-haspopup="dialog" aria-label="${p.title} — 查看作品"><img src="assets/${p.image}" alt="${p.title} 作品封面" width="1600" height="900" loading="${loading}" decoding="async" draggable="false"><span class="holo-foil" aria-hidden="true"></span><span class="holo-bursts" aria-hidden="true"></span><span class="holo-sparkles" aria-hidden="true"></span><span class="holo-glare" aria-hidden="true"></span><span class="holo-edge" aria-hidden="true"></span><span class="cover-caption" aria-hidden="true"><span class="cover-category">${categories[p.category].name}</span><span class="cover-name">${title}</span></span></button></div></article>`}
 function footer(){return `<footer class="site-footer"><div class="footer-top"><p>${t('故事还在继续。<br>下一个画面，再见。','The story goes on.<br>See you in the next frame.')}</p><a href="#top" class="back-top">${t('回到顶部','BACK TO TOP')} <span class="arrow">↑</span></a></div><div class="footer-word" aria-hidden="true">STAY <span>curious.</span></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} B2. ALL RIGHTS RESERVED.</span><nav class="footer-nav" aria-label="页脚导航"><a href="music-video.html">MUSIC VIDEO</a><a href="animation.html">ANIMATION</a><a href="live-action.html">LIVE ACTION</a></nav></div></footer>`}
-function dialog(){return `<dialog class="project-dialog" id="project-dialog" aria-labelledby="dialog-title"><button class="dialog-close" aria-label="关闭作品" type="button">×</button><video class="dialog-video" id="dialog-video" controls playsinline preload="metadata" aria-labelledby="dialog-title"></video><p class="dialog-error" id="dialog-error" role="status" hidden>${t('视频暂时无法播放，请稍后重试。','The video couldn’t load. Please try again in a moment.')}</p><div class="dialog-info"><div><span class="mono" id="dialog-category"></span><h2 class="dialog-title" id="dialog-title"></h2><p class="dialog-name">${t('创作 / B2','A film by B2')}</p></div><span class="dialog-status">${t('正片','FULL FILM')}</span></div></dialog>`}
+function dialog(){
+ return `<dialog class="project-dialog" id="project-dialog" aria-labelledby="dialog-title">
+  <button class="dialog-close" aria-label="关闭作品" type="button">×</button>
+  <div class="dialog-player">
+   <video class="dialog-video" id="dialog-video" controls playsinline webkit-playsinline preload="none" aria-labelledby="dialog-title"></video>
+   <button class="dialog-play" id="dialog-play" type="button" hidden><span aria-hidden="true">▶</span> ${t('播放正片','Play film')}</button>
+  </div>
+  <div class="dialog-info">
+   <div><span class="mono" id="dialog-category"></span><h2 class="dialog-title" id="dialog-title"></h2><p class="dialog-name">${t('创作 / B2','A film by B2')}</p></div>
+   <div class="dialog-actions">
+    <button id="dialog-quality" type="button" class="dialog-status" aria-pressed="false">${t('省流播放','Data saver')}</button>
+    <a id="dialog-open-video" class="dialog-status" target="_blank" rel="noopener">${t('单独打开视频','Open video separately')} ${arrow}</a>
+   </div>
+   <p class="dialog-message" id="dialog-message" role="status" hidden></p>
+  </div>
+ </dialog>`;
+}
 function home(){return `<main id="main">
 <section class="hero hero--heart" aria-label="B2">
   <div class="heart-stage" data-b2-heart aria-hidden="true">
@@ -74,27 +90,113 @@ indexPanel.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenu
 window.addEventListener('scroll',updateHeader,{passive:true});
 updateHeader();updateHeader();
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!indexPanel.hidden){closeMenu();indexToggle.focus()}if(e.key==='Tab'&&!indexPanel.hidden){const focusables=[indexToggle,...document.querySelectorAll('[data-language]'),...indexPanel.querySelectorAll('a')];const first=focusables[0],last=focusables.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
-const projectDialog=document.getElementById('project-dialog');
-const projectVideo=document.getElementById('dialog-video');
-const videoError=document.getElementById('dialog-error');
+const projectDialog = document.getElementById('project-dialog');
+const projectVideo = document.getElementById('dialog-video');
+const videoPlay = document.getElementById('dialog-play');
+const videoQuality = document.getElementById('dialog-quality');
+const videoLink = document.getElementById('dialog-open-video');
+const videoMessage = document.getElementById('dialog-message');
+const playbackMessages = {
+ loading: ['正在载入视频…', 'Loading film…'],
+ switching: ['网络较慢，正在切换到省流版本…', 'Switching to the data saver version…'],
+ tap: ['点击播放按钮开始。', 'Tap play to start.'],
+ failed: ['视频加载失败。可以重试，或单独打开视频。', 'Could not load the film. Retry or open the video separately.']
+};
+let activeProject;
 let opener;
-function openProject(id,trigger){
- const p=projects.find(p=>p.id===id);
- if(!p)return;
- opener=trigger;
- document.getElementById('dialog-title').textContent=p.title;
- document.getElementById('dialog-category').textContent=categories[p.category].name.toUpperCase();
- videoError.hidden=true;
- projectVideo.poster=`assets/${p.image}`;
- projectVideo.src=`videos/${p.id}.mp4`;
+let useLite;
+let resumeAt = 0;
+let startTimer;
+let playRequest = 0;
+
+function setVideoMessage(key) {
+ videoMessage.hidden = !key;
+ videoMessage.textContent = key ? playbackMessages[key][language === 'en' ? 1 : 0] : '';
+}
+
+function showPlayButton(message) {
+ clearTimeout(startTimer);
+ videoPlay.hidden = false;
+ setVideoMessage(message);
+}
+
+function startVideo() {
+ clearTimeout(startTimer);
+ videoPlay.hidden = true;
+ const request = ++playRequest;
+ if (videoMessage.hidden) setVideoMessage('loading');
+ projectVideo.play().catch(error => {
+  if (!projectDialog.open || request !== playRequest || error.name === 'AbortError') return;
+  if (error.name === 'NotAllowedError') showPlayButton('tap');
+  else handleVideoError();
+ });
+ startTimer = setTimeout(() => {
+  if (!projectDialog.open || request !== playRequest || projectVideo.paused) return;
+  if (!useLite) loadVideo(true, 'switching');
+  else {
+   projectVideo.pause();
+   showPlayButton('failed');
+  }
+ }, 10000);
+}
+
+function loadVideo(lite, message = 'loading') {
+ clearTimeout(startTimer);
+ ++playRequest;
+ useLite = lite;
+ resumeAt = projectVideo.currentTime || 0;
+ const source = `videos/${lite ? 'lite/' : ''}${activeProject.id}.mp4`;
+ videoQuality.setAttribute('aria-pressed', String(lite));
+ videoLink.href = source;
+ projectVideo.src = source;
+ setVideoMessage(message);
+ startVideo();
+}
+
+function handleVideoError() {
+ if (!projectDialog.open || !activeProject) return;
+ if (!useLite) loadVideo(true, 'switching');
+ else showPlayButton('failed');
+}
+
+function openProject(id, trigger) {
+ activeProject = projects.find(project => project.id === id);
+ if (!activeProject) return;
+ opener = trigger;
+ document.getElementById('dialog-title').textContent = activeProject.title;
+ document.getElementById('dialog-category').textContent = categories[activeProject.category].name.toUpperCase();
+ projectVideo.poster = `assets/${activeProject.image}`;
  projectDialog.showModal();
  document.body.classList.add('locked');
+ loadVideo(Boolean(navigator.connection?.saveData));
 }
-projectVideo.addEventListener('error',()=>{if(projectDialog.open && projectVideo.hasAttribute('src'))videoError.hidden=false;});
-document.querySelectorAll('[data-project]').forEach(e=>e.addEventListener('click',event=>{event.preventDefault();openProject(e.dataset.project,e)}));
-document.querySelector('.dialog-close').addEventListener('click',()=>projectDialog.close());
-projectDialog.addEventListener('click',event=>{if(event.target===projectDialog){const r=projectDialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)projectDialog.close()}});
-projectDialog.addEventListener('close',()=>{
+
+document.querySelectorAll('[data-project]').forEach(button => {
+ button.addEventListener('click', () => openProject(button.dataset.project, button));
+});
+videoQuality.addEventListener('click', () => loadVideo(!useLite));
+videoPlay.addEventListener('click', () => loadVideo(useLite));
+projectVideo.addEventListener('loadedmetadata', () => {
+ if (resumeAt > 0 && resumeAt < projectVideo.duration) projectVideo.currentTime = resumeAt;
+ resumeAt = 0;
+});
+projectVideo.addEventListener('playing', () => {
+ clearTimeout(startTimer);
+ videoPlay.hidden = true;
+ setVideoMessage();
+});
+projectVideo.addEventListener('error', handleVideoError);
+document.querySelector('.dialog-close').addEventListener('click', () => projectDialog.close());
+projectDialog.addEventListener('click', event => {
+ if (event.target !== projectDialog) return;
+ const rect = projectDialog.getBoundingClientRect();
+ if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) projectDialog.close();
+});
+projectDialog.addEventListener('close', () => {
+ clearTimeout(startTimer);
+ ++playRequest;
+ activeProject = undefined;
+ resumeAt = 0;
  projectVideo.pause();
  projectVideo.removeAttribute('src');
  projectVideo.removeAttribute('poster');
