@@ -12,13 +12,55 @@
 .holo-card:is(:hover,:focus-visible) .title-letter{opacity:1;filter:blur(0);transform:translate3d(0,0,0) rotate(0);transition-delay:calc(var(--letter)*13ms)}
 .holo-card.image-button:after{z-index:8;width:34px;height:34px;right:14px;bottom:14px;font-size:20px}
 .category-works.single .cover-name{font-size:clamp(32px,6.8vw,100px)}
-/* Slow, soft typography and staggered image entrances echo the reference. */
-.motion-ready [data-reveal]{opacity:0;filter:blur(5px);transform:translate3d(0,32px,0);transition:opacity .7s ease,filter .8s ease,transform .85s cubic-bezier(.16,1,.3,1);transition-delay:var(--reveal-delay,0ms)}
-.motion-ready [data-reveal].is-visible{opacity:1;filter:blur(0);transform:translate3d(0,0,0)}
+/* One easing family for the whole site: long, decelerating curves that settle softly. */
+:root{--ease-out:cubic-bezier(.22,1,.36,1);--ease-expo:cubic-bezier(.16,1,.3,1);--ease-inout:cubic-bezier(.76,0,.24,1)}
+/* `translate` (not `transform`) so elements keep their own rotations while they rise in. */
+.motion-ready [data-reveal]{opacity:0;translate:0 44px;transition:opacity 1s var(--ease-out),translate 1.2s var(--ease-expo);transition-delay:var(--reveal-delay,0ms)}
+.motion-ready [data-reveal].is-visible{opacity:1;translate:none}
+/* Headings: each letter rises out of a mask, like a title card. */
 .motion-word,.category-heading .motion-word{display:inline-block;white-space:nowrap}
 .motion-letter{display:inline-block;font:inherit;white-space:pre}
-.motion-ready [data-reveal] .motion-letter{opacity:0;filter:blur(7px);transform:translate3d(0,30%,0) rotate(3deg);transition:opacity .5s ease,filter .7s ease,transform .8s cubic-bezier(.16,1,.3,1);transition-delay:0s}
-.motion-ready [data-reveal].is-visible .motion-letter{opacity:1;filter:blur(0);transform:none;transition-delay:calc(var(--letter)*16ms)}
+.motion-ready [data-reveal]:has(.motion-letter){opacity:1;translate:none}
+.motion-ready [data-reveal] .motion-word{overflow:hidden;padding:.06em .04em .14em;margin:-.06em -.04em -.14em;vertical-align:top}
+.motion-ready [data-reveal] .motion-letter{transform:translate3d(0,112%,0) rotate(6deg);transform-origin:0 100%;transition:transform 1.15s var(--ease-expo);transition-delay:calc(var(--reveal-delay,0ms) + var(--letter)*22ms)}
+.motion-ready [data-reveal].is-visible .motion-letter{transform:none}
+/* Covers: the image settles from a slight zoom as the card lifts in. */
+.motion-ready .work-card[data-reveal] .holo-card img{transform:scale(1.14);transition:transform 1.8s var(--ease-expo);transition-delay:var(--reveal-delay,0ms)}
+.motion-ready .work-card[data-reveal].is-visible .holo-card img{transform:scale(1)}
+/* Hero choreography: the heart lands first, then the type follows. */
+.motion-ready .hero--heart [data-reveal]{transition-duration:1.1s,1.4s}
+.hero-scribble .scribble-line path{stroke-dasharray:200;stroke-dashoffset:0}
+.motion-ready .hero-scribble{opacity:0;translate:0 20px;transition:opacity 1s var(--ease-out) 1.9s,translate 1.4s var(--ease-expo) 1.9s}
+.motion-ready .hero-scribble .scribble-line path{stroke-dashoffset:200;transition:stroke-dashoffset 1.4s var(--ease-inout) 2.2s}
+.motion-ready .hero-scribble.is-visible{opacity:1}
+.motion-ready .hero-scribble.is-visible .scribble-line path{stroke-dashoffset:0}
+
+/* Header slides away while reading down, returns on the way up. */
+.site-header{transition:transform .6s var(--ease-out)}
+.site-header.is-tucked{transform:translate3d(0,-110%,0)}
+/* Thin reading-progress line. */
+.scroll-progress{position:fixed;left:0;top:0;width:100%;height:2px;background:var(--orange);transform-origin:0 50%;transform:scaleX(var(--progress,0));z-index:45;pointer-events:none}
+
+/* Footer word becomes a slow, endless marquee. */
+.site-footer .footer-word{display:flex;overflow:hidden;white-space:nowrap;text-align:left;margin:34px -4.3% 8px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marquee-track{display:flex;flex-shrink:0;align-items:center;animation:marquee 38s linear infinite}
+.marquee-track span{padding:0 .18em;font-family:var(--round);font-size:1em;transform:none;margin:0}
+.marquee-track em{font-family:var(--hand);font-style:normal;font-size:.83em;display:inline-block;transform:rotate(-8deg);margin:0 .03em}
+.marquee-track b{font-family:var(--hand);font-weight:400;color:var(--orange);font-size:.5em;padding:0 .3em}
+.site-footer:hover .marquee-track{animation-play-state:paused}
+@keyframes marquee{to{transform:translate3d(-100%,0,0)}}
+
+/* Pointer companion (fine pointers only, added by motion.js). */
+.cursor{position:fixed;left:0;top:0;z-index:1001;pointer-events:none;width:0;height:0}
+.cursor-ring{position:absolute;left:-18px;top:-18px;width:36px;height:36px;border:1px solid var(--blue);border-radius:50%;display:grid;place-items:center;color:var(--paper);font-family:var(--mono);font-size:10px;letter-spacing:.1em;transition:transform .5s var(--ease-out),background .35s,border-color .35s,opacity .3s;opacity:0}
+.cursor-ring span{opacity:0;transition:opacity .25s}
+.cursor.is-on .cursor-ring{opacity:.7}
+.cursor.is-link .cursor-ring{transform:scale(.45);background:var(--blue);opacity:.9}
+.cursor.is-play .cursor-ring{transform:scale(2.4);background:var(--orange);border-color:var(--orange);opacity:1}
+.cursor.is-play .cursor-ring span{opacity:1;transform:scale(.42)}
+.cursor.is-dark .cursor-ring{border-color:var(--paper)}
+.cursor.is-down .cursor-ring{transform:scale(.8)}
+.magnetic{transition:translate .6s var(--ease-out)}
 /* Adapted from the orbital loader supplied by the user, Uiverse.io / Praashoo7. */
 .page-transition{position:fixed;inset:0;z-index:1000;background:var(--blue);color:var(--paper);display:flex;align-items:center;justify-content:center;visibility:hidden;pointer-events:none;transform:translate3d(0,102%,0);overflow:hidden;isolation:isolate;transition:transform .44s cubic-bezier(.76,0,.24,1),visibility 0s .5s}
 .page-transition:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 43%,#263ebc 0%,#3154e800 52%);z-index:-1}
@@ -45,4 +87,4 @@ body.is-navigating{overflow:hidden}
 @keyframes orbital-move{0%,100%{transform:translateY(0)}50%{transform:translateY(12em)}}
 @media(max-width:600px){.cover-name{font-size:clamp(26px,8.5vw,40px)}.category-works.single .cover-name{font-size:10vw}.cover-category{font-size:8px}.cover-caption .cover-number{font-size:9px;margin-bottom:9px}.transition-loader{font-size:13px}.transition-brand{left:5%;top:20px;font-size:46px}.transition-inner{gap:24px}}
 @media(hover:none),(pointer:coarse),(max-width:600px){.holo-card .cover-caption{opacity:1;background:linear-gradient(180deg,#08113300 36%,#081133c9 100%)}.cover-category{opacity:1;transform:rotate(-3deg)}.cover-caption .cover-number{display:none}.title-letter{opacity:1;filter:none;transform:none}.cover-name{font-size:clamp(24px,7vw,34px);max-width:90%}}
-@media(prefers-reduced-motion:reduce){.motion-ready [data-reveal],.motion-ready [data-reveal] .motion-letter{opacity:1;filter:none;transform:none;transition:none}.holo-card .title-letter{filter:none;transform:none;transition:none}.holo-card .cover-caption,.cover-category,.cover-number{transition:none}.page-transition{display:none}.page-transition .orbital-ball{animation:none}}
+@media(prefers-reduced-motion:reduce){.motion-ready [data-reveal]{translate:none}.motion-ready [data-reveal],.motion-ready [data-reveal] .motion-letter,.motion-ready .work-card[data-reveal] .holo-card img{opacity:1;filter:none;transform:none;transition:none}.cursor,.scroll-progress{display:none}.site-header.is-tucked{transform:none}.motion-ready .hero-scribble{opacity:1}.motion-ready .hero-scribble .scribble-line path{stroke-dashoffset:0}.holo-card .title-letter{filter:none;transform:none;transition:none}.holo-card .cover-caption,.cover-category,.cover-number{transition:none}.page-transition{display:none}.page-transition .orbital-ball{animation:none}}
