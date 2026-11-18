@@ -24,3 +24,27 @@
 .dialog-actions .dialog-status[aria-pressed="true"]{background:var(--blue);color:var(--paper)}
 .dialog-message{flex-basis:100%;font-size:13px;line-height:1.5;margin:0}
 @media(max-width:600px){.dialog-actions{margin-top:15px}.dialog-message{margin-top:12px}}
+
+/* Contact block at the top of every footer. */
+.contact{padding:70px 0 80px;border-bottom:1px solid var(--line);margin-bottom:34px}
+.contact-head{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.contact-note{opacity:.75}
+.contact-title{font-size:clamp(46px,8.4vw,140px);line-height:.95;letter-spacing:-.065em;margin:42px 0 48px}
+.contact-title .hand{font-family:var(--hand);font-size:1.05em;letter-spacing:-.02em;color:var(--orange)}
+.contact-row{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.contact-mail{position:relative;display:inline-flex;align-items:center;gap:.4em;font-size:clamp(22px,3.3vw,50px);letter-spacing:-.035em;line-height:1.2;padding-bottom:6px;word-break:break-all}
+.contact-mail:after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:currentColor;transform:scaleX(.18);transform-origin:0 50%;transition:transform .8s cubic-bezier(.22,1,.36,1)}
+.contact-mail:hover:after,.contact-mail:focus-visible:after{transform:scaleX(1)}
+.contact-mail .arrow{font-size:.75em;transition:transform .6s cubic-bezier(.22,1,.36,1)}
+.contact-mail:hover .arrow{transform:translate(6px,-6px) rotate(0deg)}
+.contact-copy{position:relative;overflow:hidden;min-height:52px;padding:0 26px;border:1px solid var(--blue);border-radius:999px;color:var(--blue);font-family:var(--mono);font-size:12px;letter-spacing:.1em;transition:background .45s cubic-bezier(.22,1,.36,1),color .45s,translate .6s cubic-bezier(.22,1,.36,1)}
+.contact-copy:hover,.contact-copy:focus-visible{background:var(--blue);color:var(--paper)}
+.contact-copy>span{display:block;transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .3s}
+.contact-copy .copy-done{position:absolute;inset:0;display:grid;place-items:center;transform:translateY(100%);opacity:0}
+.contact-copy.is-copied{background:var(--orange);border-color:var(--orange);color:var(--paper)}
+.contact-copy.is-copied .copy-label{transform:translateY(-100%);opacity:0}
+.contact-copy.is-copied .copy-done{transform:none;opacity:1}
+.about-mail{text-transform:none;letter-spacing:.02em;border-bottom:1px solid #f0eedf66;transition:border-color .3s}
+.about-mail:hover{border-color:currentColor}
+.back-top{transition:translate .6s cubic-bezier(.22,1,.36,1)}
+@media(max-width:600px){.contact{padding:44px 0 50px;margin-bottom:26px}.contact-title{font-size:13.5vw;margin:30px 0 32px}.contact-mail{font-size:5.6vw}.contact-copy{min-height:44px;font-size:10px;padding:0 18px}.contact-note{font-size:9px}.about-bottom{flex-direction:column}}

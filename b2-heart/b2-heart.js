@@ -75,9 +75,10 @@ export async function mountHeart(el) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(PAL.paper);
-  scene.fog = new THREE.Fog(PAL.paper, 11, 24);
+  // Fog ends before the capsule field does, so the far edge melts into the paper instead of showing a hard horizon.
+  scene.fog = new THREE.Fog(PAL.paper, 9.5, 17.5);
   scene.environment = studioEnv(renderer);
-  scene.environmentIntensity = 0.9;
+  scene.environmentIntensity = 1.0;
 
   const cam = new THREE.PerspectiveCamera(24, 1, 0.1, 60);
   const camHome = new THREE.Vector3(1.4, 2.6, 10.4), look = new THREE.Vector3(HX + 0.35, 0.95, 0);
@@ -123,8 +124,8 @@ export async function mountHeart(el) {
     throw error;
   }
   const { geo: hGeo, hi } = model;
-  const heartMat = new THREE.MeshPhysicalMaterial({ color: PAL.orange, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.06,
-    sheen: 0.35, sheenColor: new THREE.Color(0xffc4a0), sheenRoughness: 0.5 });
+  const heartMat = new THREE.MeshPhysicalMaterial({ color: PAL.orange, roughness: 0.26, clearcoat: 1, clearcoatRoughness: 0.04,
+    sheen: 0.5, sheenColor: new THREE.Color(0xffc9a8), sheenRoughness: 0.42, envMapIntensity: 1.15 });
   const heart = new THREE.Mesh(hGeo, heartMat); heart.castShadow = true;
   const heartPivot = new THREE.Group(); heartPivot.add(heart); scene.add(heartPivot);
   const tearMat = new THREE.MeshPhysicalMaterial({ color: 0x8aa0ff, transmission: 1, thickness: 0.5, roughness: 0.03, ior: 1.36,
@@ -132,6 +133,17 @@ export async function mountHeart(el) {
   const TEAR_H = 0.52;
   const tear = new THREE.Mesh(tearGeometry(TEAR_H), tearMat); tear.castShadow = true; tear.visible = false; scene.add(tear);
   const beads = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 10), tearMat, 12); beads.count = 0; scene.add(beads);
+  // floating motes: a few soft specks drifting above the floor give the air some depth
+  const MOTES = reduce ? 0 : 46;
+  const moteMat = new THREE.MeshStandardMaterial({ color: PAL.peach, roughness: 0.6, transparent: true, opacity: 0.8 });
+  const motes = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), moteMat, Math.max(1, MOTES));
+  motes.count = MOTES;
+  const moteData = Array.from({ length: MOTES }, (_, i) => {
+    const h = Math.sin(i * 91.7 + 3.1) * 43758.5453, r = h - Math.floor(h);
+    return { x: -4.5 + ((i * 0.618) % 1) * 9, y: BED + 0.5 + r * 2.6, z: 2.2 - ((i * 0.381) % 1) * 7, s: 0.012 + r * 0.022, ph: r * 6.283, blue: i % 5 === 0 };
+  });
+  moteData.forEach((m, i) => motes.setColorAt(i, new THREE.Color(m.blue ? PAL.blue : PAL.peach)));
+  scene.add(motes);
   // attach point on the right lobe (heart-local, tip at y = 0, front = +z)
   const A0 = new THREE.Vector3(0.66, 1.52, hi[2] * 0.62), A1 = new THREE.Vector3(0.74, 1.22, hi[2] * 0.62);
 
@@ -164,7 +176,9 @@ export async function mountHeart(el) {
       roll = 0.1 * Math.exp(-u * 3.5) * Math.sin(u * 9.5);
     }
     if (reduce) return out.compose(v3.set(HX, BED - 0.08, 0), q4.setFromEuler(eul.set(0, 0, TILT)), s3.setScalar(1));
-    eul.set(lookY * 0.18, lookX * 0.35, TILT + roll);
+    // slow idle sway so the heart feels alive even without a pointer
+    const sway = 0.2 * Math.sin(t * 0.55) * smooth(seg(t, LAND, LAND + 1.4));
+    eul.set(lookY * 0.18, lookX * 0.35 + sway, TILT + roll);
     return out.compose(v3.set(HX, y, 0), q4.setFromEuler(eul), s3.set(sx, sy, sx));
   }
   const HM = new THREE.Matrix4(), HM2 = new THREE.Matrix4();
@@ -271,6 +285,10 @@ export async function mountHeart(el) {
     cam.updateProjectionMatrix();
   };
   new ResizeObserver(resize).observe(el); resize();
+  // scroll progress through the hero (0 at top, 1 when it has scrolled away) drives a slow camera push
+  let scrollK = 0, scrollS = 0;
+  const onScroll = () => { const r = el.getBoundingClientRect(); scrollK = clamp(-r.top / Math.max(1, r.height)); };
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
   let visible = true;
   new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
@@ -293,9 +311,25 @@ export async function mountHeart(el) {
     // camera: gentle parallax toward the pointer
     lookX += ((pointerIn && !reduce ? mouse.x : 0) - lookX) * Math.min(1, dt * 3);
     lookY += ((pointerIn && !reduce ? mouse.y : 0) - lookY) * Math.min(1, dt * 3);
-    const intro = reduce ? 1 : 1 - (1 - clamp(t / 2.2)) ** 5;
-    cam.position.set(camHome.x + lookX * 0.6 - (1 - intro) * 2.4, camHome.y + lookY * 0.25 - (1 - intro) * 1.4, camHome.z - (1 - intro) * 4.2);
-    cam.lookAt(look);
+    // cinematic intro: a long exponential ease so the camera glides to rest instead of stopping
+    const iu = clamp(t / 3.4);
+    const intro = reduce ? 1 : (iu >= 1 ? 1 : 1 - 2 ** (-10 * iu));
+    scrollS += ((reduce ? 0 : scrollK) - scrollS) * Math.min(1, dt * 6);
+    const push = smooth(scrollS);
+    cam.position.set(
+      camHome.x + lookX * 0.6 - (1 - intro) * 2.4 - push * 0.6,
+      camHome.y + lookY * 0.25 - (1 - intro) * 1.4 + push * 1.6,
+      camHome.z - (1 - intro) * 4.2 - push * 3.2);
+    cam.lookAt(look.x, look.y - push * 0.35, look.z);
+
+    // motes drift up and sway, wrapping back to the floor
+    for (let i = 0; i < MOTES; i++) {
+      const m = moteData[i];
+      const y = BED + 0.3 + ((m.y - BED + t * 0.09) % 3.1);
+      const fade = smooth(seg(y, BED + 0.3, BED + 0.8)) * (1 - smooth(seg(y, BED + 2.8, BED + 3.4)));
+      motes.setMatrixAt(i, m4.compose(v3.set(m.x + 0.18 * Math.sin(t * 0.4 + m.ph), y, m.z + 0.12 * Math.cos(t * 0.33 + m.ph)), q4.identity(), s3.setScalar(m.s * (0.2 + 0.8 * fade) * intro)));
+    }
+    if (MOTES) motes.instanceMatrix.needsUpdate = true;
 
     // hover tests
     ray.setFromCamera(mouse, cam);
